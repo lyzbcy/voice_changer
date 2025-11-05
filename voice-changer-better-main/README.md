@@ -127,13 +127,45 @@ docker run -d \
 
 ### 🐍 Anaconda 部署
 
-#### 自动化部署
+#### Windows 自动化部署（推荐）
+
+```powershell
+# 进入项目目录
+cd voice-changer-better-main
+
+# 一键Anaconda部署（首次运行）
+.\auto_deploy_anaconda.ps1
+
+# 启动服务
+.\start_anaconda.ps1
+
+# 检查环境
+.\start_anaconda.ps1 -CheckEnv
+
+# 安装/更新依赖
+.\start_anaconda.ps1 -InstallDeps
+
+# 强制GPU模式
+.\start_anaconda.ps1 -GPU
+
+# 强制CPU模式
+.\start_anaconda.ps1 -CPU
+```
+
+**注意**: 如果PowerShell提示无法执行脚本，请先运行：
+```powershell
+Set-ExecutionPolicy -ExecutionPolicy RemoteSigned -Scope CurrentUser
+```
+
+#### Linux/macOS 自动化部署
+
 ```bash
 # 一键Anaconda部署
 ./auto_deploy.sh --anaconda
 ```
 
-#### 启动服务
+#### 启动服务（Linux/macOS）
+
 ```bash
 # 基本启动
 ./start_anaconda.sh
@@ -149,6 +181,25 @@ docker run -d \
 ```
 
 #### 手动部署
+
+**Windows:**
+```powershell
+# 安装Anaconda（如果未安装）
+# 从 https://www.anaconda.com/download 下载并安装
+
+# 创建Python 3.10环境
+conda create -n voice-changer-py310 python=3.10 -y
+conda activate voice-changer-py310
+
+# 安装依赖
+cd server
+pip install -r requirements.txt
+
+# 启动服务
+python MMVCServerSIO.py
+```
+
+**Linux/macOS:**
 ```bash
 # 安装Anaconda（如果未安装）
 wget https://repo.anaconda.com/archive/Anaconda3-2023.09-0-Linux-x86_64.sh
