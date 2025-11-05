@@ -1,0 +1,88 @@
+name: Deploy to GitHub Pages
+
+on:
+  # Runs on pushes targeting the default branch
+  push:
+    branches: ["main"]
+
+  # Allows you to run this workflow manually from the Actions tab
+  workflow_dispatch:
+
+# Sets permissions of the GITHUB_TOKEN to allow deployment to GitHub Pages
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+# Allow only one concurrent deployment, skipping runs queued between the run in-progress and latest queued.
+# However, do NOT cancel in-progress runs as we want to allow these production deployments to complete.
+concurrency:
+  group: "pages"
+  cancel-in-progress: false
+
+jobs:
+  # Build job
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+          cache-dependency-path: |
+            voice-changer-better-main/client/lib/package-lock.json
+            voice-changer-better-main/client/demo/package-lock.json
+
+      - name: Install dependencies for lib
+        working-directory: voice-changer-better-main/client/lib
+        run: npm ci
+
+      - name: Build lib
+        working-directory: voice-changer-better-main/client/lib
+        run: npm run build:prod
+
+      - name: Install dependencies for demo
+        working-directory: voice-changer-better-main/client/demo
+        run: npm ci
+
+      - name: Copy lib build to demo node_modules
+        run: |
+          mkdir -p voice-changer-better-main/client/demo/node_modules/@dannadori/voice-changer-client-js/dist
+          cp -r voice-changer-better-main/client/lib/dist/* voice-changer-better-main/client/demo/node_modules/@dannadori/voice-changer-client-js/dist/
+          cp voice-changer-better-main/client/lib/package.json voice-changer-better-main/client/demo/node_modules/@dannadori/voice-changer-client-js/
+
+      - name: Build demo (web version)
+        working-directory: voice-changer-better-main/client/demo
+        run: |
+          # Build web version
+          npm run clean:web
+          # Run webpack directly (since npm script uses Windows copy command)
+          npx webpack --config webpack_web.prod.js
+          # Copy additional files (Linux compatible)
+          cp public/info_web dist_web/info
+          cp public/assets/gui_settings/edition_web.txt dist_web/assets/gui_settings/edition.txt
+
+      - name: Setup Pages
+        uses: actions/configure-pages@v5
+
+      - name: Upload artifact
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: voice-changer-better-main/client/demo/dist_web
+
+  # Deployment job
+  deploy:
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    runs-on: ubuntu-latest
+    needs: build
+    steps:
+      - name: Deploy to GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v4
+
