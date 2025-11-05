@@ -62,9 +62,23 @@ jobs:
           npm run clean:web
           # Run webpack directly (since npm script uses Windows copy command)
           npx webpack --config webpack_web.prod.js
+          # Ensure directories exist before copying files
+          mkdir -p dist_web/assets/gui_settings
           # Copy additional files (Linux compatible)
           cp public/info_web dist_web/info
           cp public/assets/gui_settings/edition_web.txt dist_web/assets/gui_settings/edition.txt
+
+      - name: Verify build output
+        working-directory: voice-changer-better-main/client/demo
+        run: |
+          # Verify that dist_web directory exists and contains index.html
+          if [ ! -f "dist_web/index.html" ]; then
+            echo "Error: dist_web/index.html not found!"
+            ls -la dist_web/ || echo "dist_web directory does not exist"
+            exit 1
+          fi
+          echo "Build verification successful"
+          ls -la dist_web/
 
       - name: Setup Pages
         uses: actions/configure-pages@v5
